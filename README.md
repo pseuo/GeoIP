@@ -23,10 +23,19 @@
 
 ### Docker 部署
 
+
 #### 构建镜像
 
-docker build -t geoip-api .
+`docker build -t geoip-api .`
 
 #### 运行容器
 
-docker run -d --name geoip-api -p 5050:8080 geoip-api
+`docker run -d --name geoip-api -p 5050:8080 geoip-api`
+
+---
+
+### 在线拉取
+
+`docker pull ghcr.io/pseuo/geoip@sha256:1484d799ede7cc282cbbf532e0df0db7fe9f2ed053e3afaa60416b25eba443a9`
+
+`docker run --name geoip-api -d -p 5050:8080 ghcr.io/pseuo/geoip`
