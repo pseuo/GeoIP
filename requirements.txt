@@ -1,3 +1,0 @@
-maxminddb
-fastapi
-uvicorn
