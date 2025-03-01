@@ -30,7 +30,7 @@
 
 #### 运行容器
 
-`docker run -d --name geoip-api -p 5050:8080 geoip-api`
+`docker run -d --name geoip-api -p 7887:7887 geoip-api`
 
 ---
 
@@ -38,4 +38,4 @@
 
 `docker pull ghcr.io/pseuo/geoip:main`
 
-`docker run --name geoip-api -d -p 5050:8080 ghcr.io/pseuo/geoip`
+`docker run --name geoip -d -p 7887:7887 ghcr.io/pseuo/geoip`
