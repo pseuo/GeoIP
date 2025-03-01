@@ -235,4 +235,4 @@ async def path_api(request: Request, ip: str):
 if __name__ == '__main__':
     query()
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8080, server_header=False, proxy_headers=True)
+    uvicorn.run(app, host="0.0.0.0", port=7887, server_header=False, proxy_headers=True)
