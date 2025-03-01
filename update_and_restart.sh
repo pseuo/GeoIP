@@ -14,7 +14,7 @@ while true; do
     echo "Attempting to restart uvicorn..."
     pkill -f "uvicorn"
     
-    nohup uvicorn main:app --host 0.0.0.0 --port 8080 --no-server-header --proxy-headers &
+    nohup uvicorn main:app --host 0.0.0.0 --port 7888 --no-server-header --proxy-headers &
     
     sleep 5
     
