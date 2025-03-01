@@ -36,6 +36,6 @@
 
 ### 在线拉取
 
-`docker pull ghcr.io/pseuo/geoip@sha256:1484d799ede7cc282cbbf532e0df0db7fe9f2ed053e3afaa60416b25eba443a9`
+`docker pull ghcr.io/pseuo/geoip:main`
 
 `docker run --name geoip-api -d -p 5050:8080 ghcr.io/pseuo/geoip`
