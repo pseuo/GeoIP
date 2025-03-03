@@ -1,12 +1,12 @@
 import ipaddress
 import maxminddb
-from fastapi import FastAPI, Request
 import json
 import datetime
 import logging
 import sys
 import os
 from logging.handlers import RotatingFileHandler
+from fastapi import FastAPI, Request, HTTPException
 
 LOG_FILE = os.path.join('/code', 'ip_query.log')
 
@@ -102,48 +102,51 @@ def get_addr(ip, mask):
     return f"{first_ip}/{mask}"
 
 def get_maxmind(ip: str):
-    ret = {"ip": ip}
-    asn_info = asn_reader.get(ip)
-    if asn_info:
-        as_ = {"number": asn_info["autonomous_system_number"], "name": asn_info["autonomous_system_organization"]}
-        info = get_as_info(as_["number"])
-        if info:
-            as_["info"] = info
-        ret["as"] = as_
+    try:
+        ret = {"ip": ip}
+        asn_info = asn_reader.get(ip)
+        if asn_info:
+            as_ = {"number": asn_info["autonomous_system_number"], "name": asn_info["autonomous_system_organization"]}
+            info = get_as_info(as_["number"])
+            if info:
+                as_["info"] = info
+            ret["as"] = as_
 
-    city_info, prefix = city_reader.get_with_prefix_len(ip)
-    ret["addr"] = get_addr(ip, prefix)
-    if not city_info:
-        return ret
-    
-    if "location" in city_info:
-        location = city_info["location"]
-        ret["location"] = {
-            "latitude": location.get("latitude"),
-            "longitude": location.get("longitude")
-        }
-    
-    if "country" in city_info:
-        country_code = city_info["country"]["iso_code"]
-        country_name = get_country(city_info["country"])
-        ret["country"] = {"code": country_code, "name": country_name}
-    
-    if "registered_country" in city_info:
-        registered_country_code = city_info["registered_country"]["iso_code"]
-        ret["registered_country"] = {"code": registered_country_code, "name": get_country(city_info["registered_country"])}
+        city_info, prefix = city_reader.get_with_prefix_len(ip)
+        ret["addr"] = get_addr(ip, prefix)
+        if not city_info:
+            return ret
         
-    regions = [get_des(i) for i in city_info.get('subdivisions', [])]
-
-    if "city" in city_info:
-        c = get_des(city_info["city"])
-        if (not regions or c not in regions[-1]) and c not in country_name:
-            regions.append(c)
+        if "location" in city_info:
+            location = city_info["location"]
+            ret["location"] = {
+                "latitude": location.get("latitude"),
+                "longitude": location.get("longitude")
+            }
+        
+        if "country" in city_info:
+            country_code = city_info["country"]["iso_code"]
+            country_name = get_country(city_info["country"])
+            ret["country"] = {"code": country_code, "name": country_name}
+        
+        if "registered_country" in city_info:
+            registered_country_code = city_info["registered_country"]["iso_code"]
+            ret["registered_country"] = {"code": registered_country_code, "name": get_country(city_info["registered_country"])}
             
-    regions = de_duplicate(regions)
-    if regions:
-        ret["regions"] = regions
-    
-    return ret
+        regions = [get_des(i) for i in city_info.get('subdivisions', [])]
+
+        if "city" in city_info:
+            c = get_des(city_info["city"])
+            if (not regions or c not in regions[-1]) and c not in country_name:
+                regions.append(c)
+                
+        regions = de_duplicate(regions)
+        if regions:
+            ret["regions"] = regions
+        
+        return ret
+    except ValueError as e:
+        return {"error": str(e)}
 
 def get_cn(ip: str, info={}):
     ret, prefix = cn_reader.get_with_prefix_len(ip)
@@ -220,6 +223,13 @@ async def api(request: Request, ip: str = None):
 async def path_api(request: Request, ip: str):
     client_ip = request.headers.get("x-forwarded-for") or request.headers.get("x-real-ip") or request.client.host
     query_ip = ip.split(',')[0].strip()  # Extract the first valid IP
+
+    # 验证IP地址是否有效
+    try:
+        ipaddress.ip_address(query_ip)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="无效的IP地址")
+
     result = get_ip_info(query_ip)
     log_data = {
         "时间": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
